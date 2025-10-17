@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { config } from './config/config';
 import { createFileRoutes } from './routes/file.routes';
+import { createFileMetadataRoutes } from './routes/file-metadata.routes';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { requestLogger } from './middleware/logger.middleware';
 
@@ -25,6 +26,7 @@ app.use(requestLogger); // Request logging
 
 // API Routes
 app.use('/api/files', createFileRoutes(config.upload.path));
+app.use('/api/file-metadata', createFileMetadataRoutes(config.upload.path));
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
@@ -48,7 +50,18 @@ app.get('/', (_req, res) => {
         listFolder: 'POST /api/files/list-folder',
         rename: 'PUT /api/files/rename',
         upload: 'POST /api/files/upload',
+        uploadWeb: 'POST /api/files/upload-web',
         stats: 'GET /api/files/stats',
+      },
+      fileMetadata: {
+        list: 'GET /api/file-metadata/list',
+        download: 'GET /api/file-metadata/download/:filename',
+        stream: 'GET /api/file-metadata/stream/:filename',
+        getById: 'GET /api/file-metadata/file/:fileId',
+        search: 'GET /api/file-metadata/search?q=searchTerm',
+        delete: 'DELETE /api/file-metadata/delete/:filename',
+        stats: 'GET /api/file-metadata/stats',
+        health: 'GET /api/file-metadata/health',
       },
     },
   });

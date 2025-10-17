@@ -316,6 +316,16 @@ class FileManagerProvider extends ChangeNotifier {
         duplicate: duplicateCount,
       );
 
+      // Refresh folder files only if some uploads were successful
+      if (doneCount > 0 && _selectedFolderPath != null && !kIsWeb) {
+        try {
+          await refreshSelectedFolder();
+        } catch (e) {
+          // Don't fail the entire upload if refresh fails
+          print('Failed to refresh folder after upload: $e');
+        }
+      }
+
       _isUploading = false;
       notifyListeners();
     } catch (e) {
@@ -326,10 +336,16 @@ class FileManagerProvider extends ChangeNotifier {
     }
   }
 
-  /// Get upload statistics
+  /// Get upload statistics and refresh folder if selected
   Future<void> fetchUploadStats() async {
     try {
       _uploadStats = await _apiService.getUploadStats();
+
+      // Also refresh the selected folder files if available
+      if (_selectedFolderPath != null) {
+        await refreshSelectedFolder();
+      }
+
       notifyListeners();
     } catch (e) {
       _errorMessage = 'Failed to fetch stats: $e';
@@ -337,12 +353,42 @@ class FileManagerProvider extends ChangeNotifier {
     }
   }
 
-  /// Clear all files
+  /// Refresh files from the currently selected folder
+  Future<void> refreshSelectedFolder() async {
+    if (_selectedFolderPath == null) return;
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      if (kIsWeb) {
+        // For web, we can't refresh folder - show message
+        ToastHelper.showInfo(
+          'Please re-select files to refresh on web platform',
+        );
+      } else {
+        // For desktop, reload files from the same folder
+        await loadFilesFromFolderWithBytes(_selectedFolderPath!);
+        ToastHelper.showSuccess('Folder refreshed: $_selectedFolderPath');
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Failed to refresh folder: $e';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Clear all files and selected folder
   void clearFiles() {
     _files = [];
-    _selectedFolderPath = null;
+    _selectedFolderPath = null; // Clear selected folder path
     _lastUploadResponse = null;
     _errorMessage = null;
+    _webFileBytes.clear(); // Clear web file bytes
+    ToastHelper.showInfo('All files and folder selection cleared');
     notifyListeners();
   }
 

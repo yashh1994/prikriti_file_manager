@@ -458,7 +458,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () {
               context.read<FileManagerProvider>().fetchUploadStats();
             },
-            tooltip: 'Refresh Stats',
+            tooltip: 'Refresh Stats & Folder',
           ),
           const SizedBox(width: 8),
         ],

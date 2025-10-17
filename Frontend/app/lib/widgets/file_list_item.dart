@@ -27,8 +27,27 @@ class _FileListItemState extends State<FileListItem> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(
-      text: widget.file.newName ?? widget.file.name,
+      text: _getFileNameWithoutExtension(),
     );
+  }
+
+  /// Get filename without extension for editing
+  String _getFileNameWithoutExtension() {
+    final fullName = widget.file.newName ?? widget.file.name;
+    final extension = widget.file.extension;
+
+    // If the filename ends with the extension, remove it
+    if (fullName.toLowerCase().endsWith('.${extension.toLowerCase()}')) {
+      return fullName.substring(0, fullName.length - extension.length - 1);
+    }
+
+    // Fallback: return the full name if extension doesn't match
+    return fullName;
+  }
+
+  /// Combine the edited name with the original extension
+  String _getFullFileName(String nameWithoutExt) {
+    return '$nameWithoutExt.${widget.file.extension}';
   }
 
   @override
@@ -194,6 +213,13 @@ class _FileListItemState extends State<FileListItem> {
                                 horizontal: 8,
                                 vertical: 4,
                               ),
+                              suffixText: '.${widget.file.extension}',
+                              suffixStyle: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF5F6368),
+                                letterSpacing: 0.2,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(4),
                                 borderSide: const BorderSide(
@@ -210,7 +236,22 @@ class _FileListItemState extends State<FileListItem> {
                             ),
                             onSubmitted: (value) {
                               if (value.trim().isNotEmpty) {
-                                widget.onRename(value.trim());
+                                // Combine the edited name with the original extension
+                                final fullFileName = _getFullFileName(
+                                  value.trim(),
+                                );
+                                widget.onRename(fullFileName);
+                              }
+                              setState(() => _isEditing = false);
+                            },
+                            onEditingComplete: () {
+                              // Handle when user taps outside or presses enter
+                              final value = _nameController.text;
+                              if (value.trim().isNotEmpty) {
+                                final fullFileName = _getFullFileName(
+                                  value.trim(),
+                                );
+                                widget.onRename(fullFileName);
                               }
                               setState(() => _isEditing = false);
                             },
